@@ -5,7 +5,7 @@ FROM python:3.12 AS env-builder
 RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs/ | sh -s -- --default-toolchain=1.68.0 -y && \
     echo 'source $HOME/.cargo/env' >> $HOME/.bashrc
 ENV PATH "$HOME/.cargo/bin:$PATH"
-RUN source $HOME/.cargo/env
+RUN source $HOME/.bashrc
 ## TODO: Use gosu
 # Set up a user for the environment
 ENV USER=g6
