@@ -59,17 +59,42 @@ RUN --mount=type=tmpfs,target=/root/.cargo \
 FROM python:3.12-slim-bookworm AS final
 
 # Set up a user for the final image
-## TODO: Use gosu
 ENV USER=g6
 RUN useradd --create-home --shell /bin/bash ${USER}
 
 # Copy files and set permissions
-COPY --from=env-builder --chown=${USER}:${USER} /g6 /g6
-COPY --from=env-builder --chown=${USER}:${USER} /venv /venv
-COPY --from=env-builder --chown=${USER}:${USER} /usr/bin/tini /usr/bin/tini
+COPY --link --from=env-builder --chown=${USER}:${USER} /g6 /g6
+COPY --link --from=env-builder --chown=${USER}:${USER} /venv /venv
+COPY --link --from=env-builder --chown=${USER}:${USER} /usr/bin/tini /usr/bin/tini
+COPY --link start.sh /usr/local/bin/
 
-# Switch to non-root user
-USER g6
+RUN set -eux; \
+      # save list of currently installed packages for later so we can clean up
+          savedAptMark="$(apt-mark showmanual)"; \
+          apt-get update; \
+          apt-get install -y --no-install-recommends ca-certificates gnupg wget; \
+          rm -rf /var/lib/apt/lists/*; \
+          \
+          dpkgArch="$(dpkg --print-architecture | awk -F- '{ print $NF }')"; \
+          wget -O /usr/local/bin/gosu "https://github.com/tianon/gosu/releases/download/$GOSU_VERSION/gosu-$dpkgArch"; \
+          wget -O /usr/local/bin/gosu.asc "https://github.com/tianon/gosu/releases/download/$GOSU_VERSION/gosu-$dpkgArch.asc"; \
+          \
+      # verify the signature
+          export GNUPGHOME="$(mktemp -d)"; \
+          gpg --batch --keyserver hkps://keys.openpgp.org --recv-keys B42F6819007F00F88E364FD4036A9C25BF357DD4; \
+          gpg --batch --verify /usr/local/bin/gosu.asc /usr/local/bin/gosu; \
+          gpgconf --kill all; \
+          rm -rf "$GNUPGHOME" /usr/local/bin/gosu.asc; \
+          \
+      # clean up fetch dependencies
+          apt-mark auto '.*' > /dev/null; \
+          [ -z "$savedAptMark" ] || apt-mark manual $savedAptMark; \
+          apt-get purge -y --auto-remove -o APT::AutoRemove::RecommendsImportant=false; \
+          \
+          chmod +x /usr/local/bin/gosu; \
+      # verify that the binary works
+          gosu --version; \
+          gosu nobody true
 
 # Set working directory
 WORKDIR /g6
@@ -81,7 +106,7 @@ VOLUME /g6
 EXPOSE 8000
 
 # Entry point for the container
-ENTRYPOINT ["tini", "--"]
+ENTRYPOINT ["tini", "--", "start.sh"]
 
 # Default command to run the application
 CMD ["/venv/bin/uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]
