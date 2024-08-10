@@ -5,7 +5,7 @@ FROM python:3.12 AS env-builder
 RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs/ | sh -s -- --default-toolchain=1.68.0 -y && \
     echo 'source $HOME/.cargo/env' >> $HOME/.bashrc
 ENV PATH "$HOME/.cargo/bin:$PATH"
-
+RUN source $HOME/.cargo/env
 ## TODO: Use gosu
 # Set up a user for the environment
 ENV USER=g6
@@ -52,6 +52,7 @@ RUN sed -i -e 's/# en_US.UTF-8 UTF-8/en_US.UTF-8 UTF-8/' /etc/locale.gen && \
 RUN --mount=type=tmpfs,target=/root/.cargo \
     python3 -m venv /venv && \
     /venv/bin/python3 -m pip install --upgrade pip && \
+    /venv/bin/python3 -m pip install cython && \
     /venv/bin/python3 -m pip install -r requirements.txt && \
     find . -type f \( -name '__pycache__' -o -name '*.pyc' -o -name '*.pyo' \) -exec bash -c 'echo "Deleting {}"; rm -f {}' \;
 
