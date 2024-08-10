@@ -52,7 +52,7 @@ RUN sed -i -e 's/# en_US.UTF-8 UTF-8/en_US.UTF-8 UTF-8/' /etc/locale.gen && \
 RUN --mount=type=tmpfs,target=/root/.cargo \
     python3 -m venv /venv && \
     /venv/bin/python3 -m pip install --upgrade pip && \
-    /venv/bin/python3 -m pip install --use-feature=fast-deps --no-cache-dir -r requirements.txt | grep 'requests to fetch metadata from' | sort -k7 && \
+    /venv/bin/python3 -m pip install -r requirements.txt && \
     find . -type f \( -name '__pycache__' -o -name '*.pyc' -o -name '*.pyo' \) -exec bash -c 'echo "Deleting {}"; rm -f {}' \;
 
 # Final lightweight image
