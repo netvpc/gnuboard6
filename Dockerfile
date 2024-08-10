@@ -59,16 +59,10 @@ RUN --mount=type=tmpfs,target=/root/.cargo \
 FROM python:3.12-slim-bookworm AS final
 
 # Set up a user for the final image
-ENV USER=g6
-ENV GOSU_VERSION=1.17
+ENV GOSU_VERSION=1.17 \
+    USER=g6
 
 RUN useradd --create-home --shell /bin/bash ${USER}
-
-# Copy files and set permissions
-COPY --from=env-builder --chown=${USER}:${USER} /g6 /g6
-COPY --from=env-builder --chown=${USER}:${USER} /venv /venv
-COPY --from=env-builder --chown=${USER}:${USER} /usr/bin/tini /usr/bin/tini
-COPY start.sh /usr/local/bin/
 
 RUN set -eux; \
       # save list of currently installed packages for later so we can clean up
@@ -98,6 +92,12 @@ RUN set -eux; \
           gosu --version; \
           gosu nobody true
 
+# Copy files and set permissions
+COPY --from=env-builder --chown=${USER}:${USER} /g6 /g6
+COPY --from=env-builder --chown=${USER}:${USER} /venv /venv
+COPY --from=env-builder --chown=${USER}:${USER} /usr/bin/tini /usr/bin/tini
+COPY start.sh /usr/local/bin/
+
 # Set working directory
 WORKDIR /g6
 
@@ -105,7 +105,7 @@ WORKDIR /g6
 VOLUME /g6
 
 # Expose the application port
-EXPOSE 8000/tcp
+EXPOSE 8000
 
 # Entry point for the container
 ENTRYPOINT ["tini", "--", "start.sh"]
