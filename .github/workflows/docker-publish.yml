@@ -89,7 +89,7 @@ jobs:
           tags: |
             type=raw,value=linux-amd64
           flavor: |
-            latest=true
+            latest=false
 
       - name: Set Clean Version
         id: set-clean-version
@@ -164,7 +164,7 @@ jobs:
             type=raw,value=linux-arm64
             type=raw,value=linux-armv7
           flavor: |
-            latest=true
+            latest=false
 
       - name: Set Clean Version
         id: set-clean-version
