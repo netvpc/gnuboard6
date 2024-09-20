@@ -73,7 +73,7 @@ jobs:
 
       - name: Build Docker image (amd64)
         id: build
-        uses: docker/build-push-action@v3
+        uses: docker/build-push-action@v6
         with:
           context: .
           build-args: VERSION=${{ env.VERSION }}
@@ -148,7 +148,7 @@ jobs:
 
       - name: Build Docker image (arm)
         id: build
-        uses: docker/build-push-action@v3
+        uses: docker/build-push-action@v6
         with:
           context: .
           build-args: VERSION=${{ env.VERSION }}
@@ -176,7 +176,7 @@ jobs:
           password: ${{ secrets.DOCKER_HUB_TOKEN }}
 
       - name: Create and push Docker manifest
-        uses: docker/build-push-action@v3
+        uses: docker/build-push-action@v6
         with:
           push: true
           tags: |
