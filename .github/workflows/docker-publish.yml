@@ -13,84 +13,11 @@ env:
 jobs:
   build-amd64:
     runs-on: ubuntu-latest
-
     permissions:
       contents: read
       packages: write
       id-token: write
       actions: write
-
-    steps:
-      - name: Set version based on tag
-        run: echo "RELEASE_VERSION=${GITHUB_REF#refs/*/}" >> $GITHUB_ENV
-
-      - name: Checkout repository
-        uses: actions/checkout@v4
-        with:
-          ref: ${{ env.RELEASE_VERSION }}
-
-      - name: Set up QEMU
-        uses: docker/setup-qemu-action@v3
-
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
-
-      - name: Log into GitHub Container Registry (GHCR)
-        if: github.event_name != 'pull_request'
-        uses: docker/login-action@v2
-        with:
-          registry: ${{ env.REGISTRY_GHCR }}
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Log into Docker Hub
-        if: github.event_name != 'pull_request'
-        uses: docker/login-action@v2
-        with:
-          registry: ${{ env.REGISTRY_DOCKERHUB }}
-          username: ${{ secrets.DOCKER_HUB_USER }}
-          password: ${{ secrets.DOCKER_HUB_TOKEN }}
-
-      - name: Extract Docker metadata
-        id: meta
-        uses: docker/metadata-action@v3
-        with:
-          images: |
-            ${{ env.REGISTRY_GHCR }}/${{ env.IMAGE_NAME }}
-            ${{ env.REGISTRY_DOCKERHUB }}/${{ env.IMAGE_NAME }}
-          tags: |
-            type=semver,pattern={{version}}
-            type=semver,pattern={{major}}.{{minor}}
-            type=semver,pattern={{major}}
-            type=raw,value={{date 'YYYYMMDD-HHmmss' tz='Asia/Seoul'}}
-          flavor: latest=true
-
-      - name: Set Clean Version
-        id: set-clean-version
-        run: |
-          CLEAN_VERSION=$(echo "${{ env.RELEASE_VERSION }}" | sed 's/^v//')
-          echo "VERSION=${CLEAN_VERSION}" >> $GITHUB_ENV
-
-      - name: Build Docker image (amd64)
-        id: build
-        uses: docker/build-push-action@v3
-        with:
-          context: .
-          build-args: VERSION=${{ env.VERSION }}
-          push: false
-          tags: ${{ steps.meta.outputs.tags }}
-          labels: ${{ steps.meta.outputs.labels }}
-          platforms: linux/amd64
-
-  build-arm:
-    runs-on: self-hosted
-
-    permissions:
-      contents: read
-      packages: write
-      id-token: write
-      actions: write
-
     steps:
       - name: Set version based on tag
         run: echo "RELEASE_VERSION=${GITHUB_REF#refs/*/}" >> $GITHUB_ENV
@@ -102,17 +29,19 @@ jobs:
 
       - name: Install cosign
         if: github.event_name != 'pull_request'
-        uses: sigstore/cosign-installer@v2.2.4
+        uses: sigstore/cosign-installer@4959ce089c160fddf62f7b42464195ba1a56d382
+        with:
+          cosign-release: 'v2.2.4'
 
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v3
 
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
+        uses: docker/setup-buildx-action@988b5a0280414f521da01fcc63a27aeeb4b104db
 
       - name: Log into GitHub Container Registry (GHCR)
         if: github.event_name != 'pull_request'
-        uses: docker/login-action@v2
+        uses: docker/login-action@3b8fed7e4b60203b2aa0ecc6c6d6d91d12c06760
         with:
           registry: ${{ env.REGISTRY_GHCR }}
           username: ${{ github.actor }}
@@ -120,7 +49,7 @@ jobs:
 
       - name: Log into Docker Hub
         if: github.event_name != 'pull_request'
-        uses: docker/login-action@v2
+        uses: docker/login-action@3b8fed7e4b60203b2aa0ecc6c6d6d91d12c06760
         with:
           registry: ${{ env.REGISTRY_DOCKERHUB }}
           username: ${{ secrets.DOCKER_HUB_USER }}
@@ -128,7 +57,7 @@ jobs:
 
       - name: Extract Docker metadata
         id: meta
-        uses: docker/metadata-action@v3
+        uses: docker/metadata-action@8e5442c4ef9f78752691e2d8f8d19755c6f78e81
         with:
           images: |
             ${{ env.REGISTRY_GHCR }}/${{ env.IMAGE_NAME }}
@@ -138,17 +67,90 @@ jobs:
             type=semver,pattern={{major}}.{{minor}}
             type=semver,pattern={{major}}
             type=raw,value={{date 'YYYYMMDD-HHmmss' tz='Asia/Seoul'}}
-          flavor: latest=true
-
+          flavor: |
+            latest=true
       - name: Set Clean Version
         id: set-clean-version
         run: |
           CLEAN_VERSION=$(echo "${{ env.RELEASE_VERSION }}" | sed 's/^v//')
           echo "VERSION=${CLEAN_VERSION}" >> $GITHUB_ENV
+      - name: Build Docker image (amd64)
+        id: build
+        uses: docker/build-push-action@5cd11c3a4ced054e52742c5fd54dca954e0edd85
+        with:
+          context: .
+          build-args: VERSION=${{ env.VERSION }}
+          push: false
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          platforms: linux/amd64
 
+  build-arm:
+    runs-on: self-hosted
+    permissions:
+      contents: read
+      packages: write
+      id-token: write
+      actions: write
+    steps:
+      - name: Set version based on tag
+        run: echo "RELEASE_VERSION=${GITHUB_REF#refs/*/}" >> $GITHUB_ENV
+
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ env.RELEASE_VERSION }}
+
+      - name: Install cosign
+        if: github.event_name != 'pull_request'
+        uses: sigstore/cosign-installer@4959ce089c160fddf62f7b42464195ba1a56d382
+        with:
+          cosign-release: 'v2.2.4'
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@988b5a0280414f521da01fcc63a27aeeb4b104db
+
+      - name: Log into GitHub Container Registry (GHCR)
+        if: github.event_name != 'pull_request'
+        uses: docker/login-action@3b8fed7e4b60203b2aa0ecc6c6d6d91d12c06760
+        with:
+          registry: ${{ env.REGISTRY_GHCR }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Log into Docker Hub
+        if: github.event_name != 'pull_request'
+        uses: docker/login-action@3b8fed7e4b60203b2aa0ecc6c6d6d91d12c06760
+        with:
+          registry: ${{ env.REGISTRY_DOCKERHUB }}
+          username: ${{ secrets.DOCKER_HUB_USER }}
+          password: ${{ secrets.DOCKER_HUB_TOKEN }}
+
+      - name: Extract Docker metadata
+        id: meta
+        uses: docker/metadata-action@8e5442c4ef9f78752691e2d8f8d19755c6f78e81
+        with:
+          images: |
+            ${{ env.REGISTRY_GHCR }}/${{ env.IMAGE_NAME }}
+            ${{ env.REGISTRY_DOCKERHUB }}/${{ env.IMAGE_NAME }}
+          tags: |
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=semver,pattern={{major}}
+            type=raw,value={{date 'YYYYMMDD-HHmmss' tz='Asia/Seoul'}}
+          flavor: |
+            latest=true
+      - name: Set Clean Version
+        id: set-clean-version
+        run: |
+          CLEAN_VERSION=$(echo "${{ env.RELEASE_VERSION }}" | sed 's/^v//')
+          echo "VERSION=${CLEAN_VERSION}" >> $GITHUB_ENV
       - name: Build Docker image (arm)
         id: build
-        uses: docker/build-push-action@v3
+        uses: docker/build-push-action@5cd11c3a4ced054e52742c5fd54dca954e0edd85
         with:
           context: .
           build-args: VERSION=${{ env.VERSION }}
@@ -162,23 +164,24 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Log into GitHub Container Registry (GHCR)
-        uses: docker/login-action@v2
+        uses: docker/login-action@3b8fed7e4b60203b2aa0ecc6c6d6d91d12c06760
         with:
           registry: ${{ env.REGISTRY_GHCR }}
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Log into Docker Hub
-        uses: docker/login-action@v2
+        uses: docker/login-action@3b8fed7e4b60203b2aa0ecc6c6d6d91d12c06760
         with:
           registry: ${{ env.REGISTRY_DOCKERHUB }}
           username: ${{ secrets.DOCKER_HUB_USER }}
           password: ${{ secrets.DOCKER_HUB_TOKEN }}
 
       - name: Create and push Docker manifest
-        uses: docker/build-push-action@v3
+        uses: docker/build-push-action@5cd11c3a4ced054e52742c5fd54dca954e0edd85
         with:
           push: true
           tags: |
-            ${{ needs.build-amd64.outputs.tags }},${{ needs.build-arm.outputs.tags }}
+            ${{ needs.build-amd64.outputs.tags }}
+            ${{ needs.build-arm.outputs.tags }}
           platforms: linux/amd64, linux/arm64, linux/arm/v7
