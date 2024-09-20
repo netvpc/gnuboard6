@@ -33,7 +33,9 @@ jobs:
 
       - name: Install cosign (except on PR)
         if: github.event_name != 'pull_request'
-        uses: sigstore/cosign-installer@v2.2.4
+        uses: sigstore/cosign-installer@4959ce089c160fddf62f7b42464195ba1a56d382 # v3.6.0
+        with:
+          cosign-release: 'v2.2.4'
 
       - name: Log into GitHub Container Registry (GHCR)
         if: github.event_name != 'pull_request'
