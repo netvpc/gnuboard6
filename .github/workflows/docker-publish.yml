@@ -203,6 +203,8 @@ jobs:
 
       - uses: int128/docker-manifest-create-action@v2
         with:
+          index-annotations: |
+            ${{ needs.set-up.outputs.meta.labels }}
           tags: |
             ${{ needs.set-up.outputs.meta.tags }}
           sources: |
