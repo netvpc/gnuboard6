@@ -19,7 +19,7 @@ jobs:
       id-token: write
       actions: write
     outputs:
-      tags: ${{ steps.meta.outputs.tag }}
+      tags: ${{ steps.meta.outputs.tags }}
       annotations: ${{ steps.meta.outputs.annotations }}
       labels: ${{ steps.meta.outputs.labels }}
     steps:
