@@ -18,7 +18,10 @@ jobs:
       packages: write
       id-token: write
       actions: write
-
+    outputs:
+      tags: ${{ steps.meta.outputs.tag }}
+      annotations: ${{ steps.meta.outputs.annotations }}
+      labels: ${{ steps.meta.outputs.labels }}
     steps:
       - name: Extract Docker metadata
         id: meta
@@ -210,9 +213,9 @@ jobs:
       - uses: int128/docker-manifest-create-action@v2
         with:
           index-annotations: |
-            ${{ needs.set-up.outputs.meta.labels }}
+            ${{ needs.set-up.outputs.labels }}
           tags: |
-            ${{ needs.set-up.outputs.meta.tags }}
+            ${{ needs.set-up.outputs.tags }}
           sources: |
             ${{ env.REGISTRY_DOCKERHUB }}/${{ env.IMAGE_NAME }}:linux-amd64
             ${{ env.REGISTRY_DOCKERHUB }}/${{ env.IMAGE_NAME }}:linux-arm64
