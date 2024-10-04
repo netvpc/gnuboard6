@@ -1,6 +1,8 @@
 # Base image for building the environment
 FROM python:3.12 AS env-builder
 
+ARG VERSION
+
 # Install Rust with a specific toolchain and set up environment variables
 ENV RUSTUP_HOME=/usr/local/rustup \
     CARGO_HOME=/usr/local/cargo \
@@ -37,7 +39,7 @@ RUN useradd --create-home --shell /bin/bash ${USER}
 WORKDIR /g6
 
 # Clone the repository and remove unwanted files
-RUN git clone --recurse-submodules -j8 --depth 1 https://github.com/gnuboard/g6.git . && \
+RUN git clone --recurse-submodules -j8 --depth 1 --branch ${VERSION} https://github.com/gnuboard/g6.git . && \
     find . -mindepth 1 -maxdepth 1 -name '.*' ! -name '.' ! -name '..' -exec bash -c 'echo "Deleting {}"; rm -rf {}' \;
 
 # Set ownership of the working directory
