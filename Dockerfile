@@ -1,5 +1,5 @@
 # Base image for building the environment
-FROM python:3.12 AS env-builder
+FROM python:3.13 AS env-builder
 
 ARG VERSION
 
@@ -81,7 +81,7 @@ RUN --mount=type=tmpfs,target=/root/.cargo \
     find . -type f \( -name '__pycache__' -o -name '*.pyc' -o -name '*.pyo' \) -exec bash -c 'echo "Deleting {}"; rm -f {}' \;
 
 # Final lightweight image
-FROM python:3.12-slim-bookworm AS final
+FROM python:3.13-slim-bookworm AS final
 
 # Set up a user for the final image
 ENV GOSU_VERSION=1.17 \
